@@ -1,0 +1,54 @@
+// Arduino code to control two servos without libraries
+
+// Define servo pins
+const int servo1Pin = 9;
+const int servo2Pin = 10;
+
+// Variables to store angles
+int servo1Angle = 0;
+int servo2Angle = 0;
+
+void setup() {
+  pinMode(servo1Pin, OUTPUT);
+  pinMode(servo2Pin, OUTPUT);
+  Serial.begin(9600);
+}
+
+// Function to generate PWM for servo
+void rotateServo(int pin, int angle) {
+  int pulseWidth = map(angle, 0, 180, 544, 2400); // Convert angle to pulse width
+  for (int i = 0; i < 50; i++) { // Send 50 pulses for stability
+    digitalWrite(pin, HIGH);
+    delayMicroseconds(pulseWidth);
+    digitalWrite(pin, LOW);
+    delayMicroseconds(20000 - pulseWidth);
+  }
+}
+
+void loop() {
+  if (Serial.available()) {
+    int receivedAngle = Serial.parseInt();
+
+    // Validate and adjust the angle in multiples of 45 degrees
+    if (receivedAngle >= 0 && receivedAngle <= 180 && receivedAngle % 45 == 0) {
+      servo1Angle = receivedAngle;
+
+      // Rotate servo 1 to desired angle
+      rotateServo(servo1Pin, servo1Angle);
+      delay(500); // Hold for a moment
+
+      // Return servo 1 to original position
+      rotateServo(servo1Pin, 0);
+      delay(3000); // Wait 5 seconds
+
+      // Rotate servo 2 anti-clockwise to 0 degrees
+      rotateServo(servo2Pin, 90);
+      delay(500); // Hold for a moment
+
+      // Return servo 2 to original 90 degrees
+      rotateServo(servo2Pin, 0);
+    } else {
+      Serial.println("Invalid angle. Provide multiples of 45 (0 to 180).");
+    }
+  }
+}
